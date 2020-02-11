@@ -1,0 +1,221 @@
+#!/bin/bash
+set -e
+
+SRCPATH="$PWD"
+KAMBASE=/usr/local
+RTPBASE=/usr
+mkdir -p script
+cd script
+
+apt-get -y update
+
+apt-get -y install php php-mysql php-gd php-curl php-xml libapache2-mod-php php-pear php-xmlrpc gcc flex bison libunistring-dev libssl-dev libcurl4-openssl-dev libxml2-dev libpcre3-dev build-essential unzip wget git make
+
+if [ ! -f /etc/init.d/apache2* ]; then
+	apt-get -y install apache2
+	sed -i "/^memory_limit = .*\|^#memory_limit = .*/c memory_limit = 512M" /etc/php/7.2/apache2/php.ini
+	sed -i "/^upload_max_filesize = .*\|^#upload_max_filesize = .*/c upload_max_filesize = 150M" /etc/php/7.2/apache2/php.ini
+	sed -i "/^max_execution_time = .*\|^#max_execution_time = .*/c max_execution_time = 360" /etc/php/7.2/apache2/php.ini
+	sed -i "/^date.timezone = .*\|^#date.timezone = .*/c date.timezone = Asia/Dhaka" /etc/php/7.2/apache2/php.ini
+	systemctl start apache2
+	systemctl enable apache2
+else
+	systemctl restart apache2
+fi
+
+if [ ! -f /etc/init.d/mysql* ]; then
+	apt-get -y install mysql-server libmysqlclient-dev
+	systemctl start mysql 
+	systemctl enable mysql
+else
+	systemctl restart mysql
+fi
+
+if [ ! -f /etc/init.d/rtpproxy* ]; then
+	git clone -b master https://github.com/sippy/rtpproxy.git rtpproxy
+	git -C rtpproxy submodule update --init --recursive
+	cd rtpproxy
+	./configure
+	make
+	make install
+	cd ../
+
+	groupadd --system rtpproxy
+	useradd -s /sbin/nologin --system -g rtpproxy rtpproxy
+
+	cp $SRCPATH/rtpproxy.init /etc/init.d/rtpproxy
+
+	echo "====================================================="
+	echo 
+	echo "					SIP DOMAIN						   "
+	echo 
+	echo "====================================================="
+	echo
+	read -p "Public IP : " sipip
+
+	cat >/etc/default/rtpproxy <<EOF
+# USER=rtpproxy
+# GROUP=rtpproxy
+# The control socket.
+# To listen on an UDP socket, uncomment this line:
+CONTROL_SOCK=/var/run/rtpproxy/rtpproxy.sock
+# Additional options that are passed to the daemon.
+EXTRA_OPTS="-l $sipip"
+EOF
+	mkdir -p /var/run/rtpproxy
+	chown -R rtpproxy:rtpproxy -R /var/run/rtpproxy/
+	systemctl daemon-reload
+	systemctl start rtpproxy.service
+	systemctl enable rtpproxy.service
+fi
+
+if [ ! -f /etc/init.d/kamailio* ]; then
+
+	wget -c https://github.com/kamailio/kamailio/archive/5.3.2.tar.gz -O - | tar -xz
+	cd kamailio*
+	make include_modules="db_mysql dialplan websocket tls" cfg
+	make Q=0 all
+	make install
+
+	echo "====================================================="
+	echo 
+	echo "			  Kamailio Mysql Information			   "
+	echo 
+	echo "====================================================="
+	echo 
+	read -p "Sip Domain : " sipdomain
+	read -p "Database User : " dbuser
+	read -p "Database Name : " dbname
+	read -s -p "Database Password : " dbpasswd
+	echo
+
+	sed -i "/^# SIP_DOMAIN=.*\|^#SIP_DOMAIN=.*/c SIP_DOMAIN=${sipdomain}" $KAMBASE/etc/kamailio/kamctlrc
+	sed -i "/^# DBENGINE=MYSQL.*\|^#DBENGINE=MYSQL.*/c DBENGINE=MYSQL" $KAMBASE/etc/kamailio/kamctlrc
+	sed -i "/^# DBHOST=.*\|^#DBHOST=.*/c DBHOST=localhost" $KAMBASE/etc/kamailio/kamctlrc
+	sed -i "/^# DBPORT=.*\|^#DBPORT=.*/c DBPORT=3306" $KAMBASE/etc/kamailio/kamctlrc
+	sed -i "/^# DBNAME=.*\|^#DBNAME=.*/c DBNAME=${dbname}" $KAMBASE/etc/kamailio/kamctlrc
+	sed -i "/^# DBRWUSER=.*\|^#DBRWUSER=.*/c DBRWUSER=\"${dbuser}\"" $KAMBASE/etc/kamailio/kamctlrc
+	sed -i "/^# DBRWPW=.*\|^#DBRWPW=.*/c DBRWPW=\"${dbpasswd}\"" $KAMBASE/etc/kamailio/kamctlrc
+	sed -i "/^# CHARSET=.*\|^#CHARSET=.*/c CHARSET=\"latin1\"" $KAMBASE/etc/kamailio/kamctlrc
+	sed -i "/^# ALIASES_TYPE=.*\|^#ALIASES_TYPE=.*/c ALIASES_TYPE=\"DB\"" $KAMBASE/etc/kamailio/kamctlrc
+
+	echo "====================================================="
+	echo 
+	echo "	Kamailio DB Passwd Enter to Create Data Table"
+	echo 
+	echo "====================================================="
+	echo
+	$KAMBASE/sbin/kamdbctl create
+
+	sed -i '/^#!KAMAILIO/a  \
+#!define WITH_MYSQL \
+#!define WITH_AUTH \
+#!define WITH_USRLOCDB \
+#!define WITH_ACCDB' $KAMBASE/etc/kamailio/kamailio.cfg
+	sed -i "/^#!define DBURL \"mysql:\/\/.*/c #!define DBURL \"mysql://${dbuser}:${dbpasswd}@localhost/${dbname}\"" $KAMBASE/etc/kamailio/kamailio.cfg
+	
+	cat >/etc/default/kamailio <<EOF
+#
+# Kamailio startup options
+#
+
+# Set to yes to enable kamailio, once configured properly.
+#RUN_KAMAILIO=yes
+
+# User to run as
+#USER=kamailio
+
+# Group to run as
+#GROUP=kamailio
+
+# Amount of shared and private memory to allocate
+# for the running Kamailio server (in Mb)
+#SHM_MEMORY=64
+#PKG_MEMORY=8
+
+# Config file
+#CFGFILE=/etc/local/kamailio/kamailio.cfg
+
+# Enable the server to leave a core file when it crashes.
+# Set this to 'yes' to enable Kamailio to leave a core file when it crashes
+# or 'no' to disable this feature. This option is case sensitive and only
+# accepts 'yes' and 'no' and only in lowercase letters.
+# On some systems it is necessary to specify a directory for the core files
+# to get a dump. Look into the kamailio init file for an example configuration.
+#DUMP_CORE=yes
+EOF
+	cp $SRCPATH/kamailio.init /etc/init.d/kamailio
+
+	systemctl daemon-reload
+	systemctl start kamailio.service
+	systemctl enable kamailio.service
+fi
+
+prxml=$(pear install XML_RPC2 | grep XML_RPC2)
+
+if [ -z "${prxml}" ]; then
+	pear install XML_RPC2
+fi
+
+cd /var/www/
+if [ ! -d /var/www/siremis ]; then
+	git clone https://github.com/asipto/siremis.git siremis
+fi
+cd siremis
+make prepare24
+make chown
+
+if [ ! -d /etc/apache2/sites-available ]; then
+	mkdir -p /etc/apache2/sites-available
+fi
+if [ ! -f /etc/apache2/sites-available/siremis.conf  ]; then
+	echo "====================================================="
+	echo 
+	echo "					SIP DOMAIN						   "
+	echo 
+	echo "====================================================="
+	echo
+	read -p "Your Website Domain Name : " websitedomain
+fi
+cat >/etc/apache2/sites-available/siremis.conf <<EOF
+<VirtualHost *:80>
+	ServerName $websitedomain
+	ServerAdmin admin@$websitedomain
+	DocumentRoot /var/www/siremis
+	Alias /siremis "/var/www/siremis/siremis"
+	<Directory "/var/www/siremis/siremis">
+		Options Indexes FollowSymLinks MultiViews
+		AllowOverride All
+		Require all granted
+		<FilesMatch "\.xml$">
+			Require all denied
+		</FilesMatch>
+		<FilesMatch "\.inc$">
+			Require all denied
+		</FilesMatch>
+	</Directory>
+</VirtualHost>
+EOF
+
+a2ensite siremis
+a2dissite 000-default
+a2enmod rewrite
+systemctl restart apache2
+
+echo "====================================================="
+echo 
+echo "			   Siremis Mysql Information			   "
+echo 
+echo "====================================================="
+echo
+read -p "Database User : " dbusr
+read -s -p "User Password : " dbpass
+echo
+mysql -e "CREATE USER '${dbusr}'@localhost IDENTIFIED BY '${dbpass}';"
+mysql -e "GRANT ALL PRIVILEGES ON *.* TO '${dbusr}'@'localhost';"
+mysql -e "FLUSH PRIVILEGES;"
+echo "====================================================="
+echo 
+echo "http://${websitedomain}/siremis"
+echo 
+echo "====================================================="
