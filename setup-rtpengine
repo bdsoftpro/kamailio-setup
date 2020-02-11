@@ -56,6 +56,7 @@ if [ ! -f /etc/init.d/ngcp-rtpengine-daemon ]; then
 	dpkg -i libbcg729-*.deb
 	dpkg-buildpackage
 	cd ../
+	dpkg -i ngcp-rtpengine-daemon_*.deb ngcp-rtpengine-iptables_*.deb ngcp-rtpengine-kernel-dkms_*.deb
 	cat >/etc/default/ngcp-rtpengine-daemon <<EOF
 RUN_RTPENGINE=yes
 CONFIG_FILE=/etc/rtpengine/rtpengine.conf
@@ -67,7 +68,7 @@ TABLE=0
 #SET_GROUP=root # GROUP only needs to be set if USER is not set or if the user isn't in the group
 EOF
 	cp WEBRTC/etc/rtpengine/rtpengine.conf /etc/rtpengine/
-	dpkg -i ngcp-rtpengine-daemon_*.deb ngcp-rtpengine-iptables_*.deb ngcp-rtpengine-kernel-dkms_*.deb
+	/etc/init.d/ngcp-rtpengine-daemon restart
 fi
 
 if [ ! -f /etc/init.d/kamailio* ]; then
