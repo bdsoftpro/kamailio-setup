@@ -67,7 +67,10 @@ TABLE=0
 #SET_USER=root
 #SET_GROUP=root # GROUP only needs to be set if USER is not set or if the user isn't in the group
 EOF
+	read -p "Press enter to continue"
+	echo "$PWD"
 	cp WEBRTC/etc/rtpengine/rtpengine.conf /etc/rtpengine/
+	read -p "Press enter to continue"
 	/etc/init.d/ngcp-rtpengine-daemon restart
 fi
 
