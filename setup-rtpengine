@@ -23,6 +23,7 @@ else
 	systemctl restart mysql
 fi
 
+if [ ! -d WEBRTC ]; then
 git clone https://github.com/havfo/WEBRTC-to-SIP.git WEBRTC
 cd WEBRTC
 
@@ -42,6 +43,7 @@ find . -type f -print0 | xargs -0 sed -i "s/XXXXX-XXXXX/${ipv4}/g"
 find . -type f -print0 | xargs -0 sed -i "s/XXXX-XXXX/${dname}/g"
 
 cd ../
+fi
 
 if [ ! -f /etc/init.d/ngcp-rtpengine-daemon ]; then
 	wget -c https://github.com/sipwise/rtpengine/archive/mr6.5.7.4.tar.gz -O - | tar -xz
