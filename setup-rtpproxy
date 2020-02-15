@@ -13,6 +13,9 @@ apt-get -y update
 # nano /etc/apt/sources.list.d/nginx.list
 # deb https://nginx.org/packages/mainline/ubuntu/ bionic nginx
 # deb-src https://nginx.org/packages/mainline/ubuntu/ bionic nginx
+# wget http://nginx.org/keys/nginx_signing.key
+# apt-key add nginx_signing.key
+# apt-get -y install nginx
 apt-get -y install php php-mysql php-gd php-curl php-xml libapache2-mod-php php-pear php-xmlrpc gcc flex bison libunistring-dev libssl-dev libcurl4-openssl-dev libxml2-dev libpcre3-dev build-essential unzip wget git make
 
 if [ ! -f /etc/init.d/apache2* ]; then
