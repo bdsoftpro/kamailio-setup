@@ -80,7 +80,7 @@ if [ ! -f /etc/init.d/kamailio* ]; then
 
 	wget -c https://github.com/kamailio/kamailio/archive/5.3.2.tar.gz -O - | tar -xz
 	cd kamailio*
-	make include_modules="db_mysql dialplan websocket tls" cfg
+	make include_modules="acc_json acc_radius app_java app_lua app_lua_sr app_mono app_perl app_python app_python3 app_ruby auth_ephemeral auth_identity auth_radius cdp cdp_avp cnxcc cplc crypto db2_ldap db_berkeley db_cassandra db_mongodb db_mysql db_oracle db_perlvdb db_postgres db_redis db_sqlite db_unixodbc dialplan dnssec erlang evapi geoip geoip2 gzcompress h350 http_async_client http_client ims_auth ims_charging ims_dialog ims_diameter_server ims_icscf ims_ipsec_pcscf ims_isc ims_ocs ims_qos ims_registrar_pcscf ims_registrar_scscf ims_usrloc_pcscf ims_usrloc_scscf jansson janssonrpcc json jsonrpcc kafka kazoo lcr ldap log_systemd lost memcached misc_radius mqtt ndb_cassandra ndb_mongodb ndb_redis nsq osp outbound peering phonenum presence presence_conference presence_dialoginfo presence_mwi presence_profile presence_reginfo presence_xml pua pua_bla pua_dialoginfo pua_json pua_reginfo pua_rpc pua_usrloc pua_xmpp pv_headers rabbitmq regex rls rtp_media_server secsipid systemdops tls topos_redis utils uuid websocket xcap_client xcap_server xhttp_pi xmlops xmlrpc xmpp" cfg
 	make Q=0 all
 	make install
 
