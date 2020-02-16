@@ -1,0 +1,48 @@
+apt-get install php-fpm php-cli php-mysql php-gd php-common php-opcache php-curl php-xml php-pear php-xmlrpc
+nano /etc/apt/sources.list.d/nginx.list
+deb https://nginx.org/packages/mainline/ubuntu/ bionic nginx
+deb-src https://nginx.org/packages/mainline/ubuntu/ bionic nginx
+wget http://nginx.org/keys/nginx_signing.key
+apt-key add nginx_signing.key
+apt-get update
+
+apt-get -y install nginx
+
+ps -aux | grep nginx
+ps -aux | grep php-fpm
+systemctl status nginx
+mkdir /var/www/html/web1.webdock.io
+mkdir /var/www/html/web2.webdock.io
+chown -R www-data:www-data /var/www/html/web1.webdock.io
+chown -R www-data:www-data /var/www/html/web2.webdock.io
+nano /etc/nginx/conf.d/web1.webdock.io.conf
+EOF
+server {
+        listen 80;
+        root /var/www/html/web1.webdock.io;
+        index index.html index.htm index.php;
+        server_name web1.webdock.io;
+
+        location ~ \.php$ {
+          fastcgi_split_path_info ^(.+\.php)(/.+)$;
+          fastcgi_pass unix:/var/run/php/php7.3-fpm.sock;
+          fastcgi_index index.php;
+          include fastcgi_params;
+          fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+          fastcgi_intercept_errors off;
+          fastcgi_buffer_size 16k;
+          fastcgi_buffers 4 16k;
+          fastcgi_connect_timeout 600;
+          fastcgi_send_timeout 600;
+          fastcgi_read_timeout 600;
+        }
+
+
+   location / {
+       try_files $uri $uri/ =404;
+   }
+
+}
+EOF
+systemctl restart nginx
+systemctl restart php7.3-fpm
