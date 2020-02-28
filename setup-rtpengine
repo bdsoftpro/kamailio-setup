@@ -13,7 +13,8 @@ cd script
 
 apt-get -y update
 
-apt-get -y install gcc flex bison libunistring-dev libssl-dev libcurl4-openssl-dev libxml2-dev libpcre3-dev build-essential debhelper default-libmysqlclient-dev gperf iptables-dev libavcodec-dev libavfilter-dev libavformat-dev libavutil-dev libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libhiredis-dev libio-multiplex-perl libio-socket-inet6-perl libjson-glib-dev libdigest-crc-perl libdigest-hmac-perl libnet-interface-perl libnet-interface-perl libssl-dev libsystemd-dev libxmlrpc-core-c3-dev libcurl4-openssl-dev libevent-dev libpcap0.8-dev markdown unzip nfs-common dkms libspandsp-dev
+# apt-get -y install gcc flex bison libunistring-dev libssl-dev libcurl4-openssl-dev libxml2-dev libpcre3-dev build-essential debhelper default-libmysqlclient-dev gperf iptables-dev libavcodec-dev libavfilter-dev libavformat-dev libavutil-dev libbencode-perl libcrypt-openssl-rsa-perl libcrypt-rijndael-perl libhiredis-dev libio-multiplex-perl libio-socket-inet6-perl libjson-glib-dev libdigest-crc-perl libdigest-hmac-perl libnet-interface-perl libnet-interface-perl libssl-dev libsystemd-dev libxmlrpc-core-c3-dev libcurl4-openssl-dev libevent-dev libpcap0.8-dev markdown unzip nfs-common dkms libspandsp-dev
+apt-get -y install gcc flex bison libunistring-dev libssl-dev libcurl4-openssl-dev libxml2-dev libpcre3-dev build-essential debhelper default-libmysqlclient-dev gperf iptables-dev libavcodec-dev libavfilter-dev libavformat-dev libavutil-dev libjson-glib-dev libssl-dev libsystemd-dev libxmlrpc-core-c3-dev libcurl4-openssl-dev libevent-dev libpcap0.8-dev markdown unzip nfs-common dkms libspandsp-dev libgeoip-dev libcryptsetup-dev libjansson-dev libjson-c-dev libjsoncpp-dev libexpat1-dev
 
 if [ ! -f /etc/init.d/mysql* ]; then
 	apt-get -y install mysql-server libmysqlclient-dev
@@ -80,7 +81,7 @@ if [ ! -f /etc/init.d/kamailio* ]; then
 
 	wget -c https://github.com/kamailio/kamailio/archive/5.3.2.tar.gz -O - | tar -xz
 	cd kamailio*
-	make include_modules="db_mysql dialplan websocket tls" cfg
+	make include_modules="acc_json auth_ephemeral auth_identity cdp cdp_avp cnxcc cplc crypto db_mysql dialplan geoip gzcompress http_async_client http_client ims_auth ims_charging ims_dialog ims_diameter_server ims_icscf ims_isc ims_ocs ims_qos ims_registrar_pcscf ims_registrar_scscf ims_usrloc_pcscf json jansson janssonrpcc jsonrpcc lcr log_systemd lost memcached outbound presence presence_conference presence_dialoginfo presence_mwi presence_profile presence_reginfo presence_xml regex rls tls utils websocket xcap_client xcap_server xhttp_pi xmlops xmlrpc xmpp" cfg
 	make Q=0 all
 	make install
 	echo "====================================================="
