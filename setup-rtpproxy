@@ -9,7 +9,7 @@ cd script
 
 apt-get -y update
 # nginx
-# apt-get -y install php-fpm php-cli php-mysql php-gd php-common php-opcache php-curl php-xml php-pear php-xmlrpc gcc build-essential unzip wget make automake flex bison libunistring-dev libssl-dev libcurl4-openssl-dev libghc-zlib-dev libexpat1-dev libxml2-dev libpcre3-dev
+# apt-get -y install php-fpm php-cli php-mysql php-gd php-common php-opcache php-curl php-xml php-pear php-xmlrpc php-mbstring gcc build-essential unzip wget make automake flex bison libunistring-dev libssl-dev libcurl4-openssl-dev libghc-zlib-dev libexpat1-dev libxml2-dev libpcre3-dev
 # nano /etc/apt/sources.list.d/nginx.list
 # deb https://nginx.org/packages/mainline/ubuntu/ bionic nginx
 # deb-src https://nginx.org/packages/mainline/ubuntu/ bionic nginx
